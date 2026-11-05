@@ -1,0 +1,53 @@
+{
+  "id": "dev_tools",
+  "require": {
+    "net": false,
+    "debug": true
+  },
+  "i18n": {
+    "title": {
+      "en": "Dev Tools",
+      "fr": "Outils de développement"
+    },
+    "summary": {
+      "en": "View server logs",
+      "fr": "Voir les journaux du serveur"
+    },
+    "refresh": {
+      "en": "Refresh",
+      "fr": "Rafraîchir"
+    },
+    "time": {
+      "en": "Time",
+      "fr": "Heure"
+    },
+    "level": {
+      "en": "Level",
+      "fr": "Niveau"
+    },
+    "message": {
+      "en": "Message",
+      "fr": "Message"
+    },
+    "details": {
+      "en": "Details",
+      "fr": "Détails"
+    },
+    "startup_title": {
+      "en": "Server startup",
+      "fr": "Démarrage du serveur"
+    },
+    "requests_title": {
+      "en": "Requests and responses",
+      "fr": "Requêtes et réponses"
+    },
+    "no_logs": {
+      "en": "No logs available",
+      "fr": "Aucun journal disponible"
+    },
+    "load_error": {
+      "en": "Unable to load logs",
+      "fr": "Impossible de charger les journaux"
+    }
+  }
+}

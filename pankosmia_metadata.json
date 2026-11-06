@@ -10,8 +10,8 @@
       "fr": "Outils de développement"
     },
     "summary": {
-      "en": "View server logs",
-      "fr": "Voir les journaux du serveur"
+      "en": "View and filter server logs",
+      "fr": "Voir et filtrer les journaux du serveur"
     },
     "refresh": {
       "en": "Refresh",
@@ -48,6 +48,190 @@
     "load_error": {
       "en": "Unable to load logs",
       "fr": "Impossible de charger les journaux"
+    },
+    "grid_no_rows": {
+      "en": "No rows",
+      "fr": "Aucune ligne"
+    },
+    "grid_no_results": {
+      "en": "No results found.",
+      "fr": "Aucun résultat."
+    },
+    "grid_columns": {
+      "en": "Columns",
+      "fr": "Colonnes"
+    },
+    "grid_filters": {
+      "en": "Filters",
+      "fr": "Filtres"
+    },
+    "grid_active_filter": {
+      "en": "%1% active filter",
+      "fr": "%1% filtre actif"
+    },
+    "grid_active_filters": {
+      "en": "%1% active filters",
+      "fr": "%1% filtres actifs"
+    },
+    "grid_search_placeholder": {
+      "en": "Search…",
+      "fr": "Rechercher…"
+    },
+    "grid_search": {
+      "en": "Search",
+      "fr": "Rechercher"
+    },
+    "grid_clear": {
+      "en": "Clear",
+      "fr": "Effacer"
+    },
+    "grid_no_columns": {
+      "en": "No columns",
+      "fr": "Aucune colonne"
+    },
+    "grid_show_hide_all": {
+      "en": "Show/Hide All",
+      "fr": "Afficher/masquer tout"
+    },
+    "grid_reset": {
+      "en": "Reset",
+      "fr": "Réinitialiser"
+    },
+    "grid_add_filter": {
+      "en": "Add filter",
+      "fr": "Ajouter un filtre"
+    },
+    "grid_remove_all": {
+      "en": "Remove all",
+      "fr": "Tout supprimer"
+    },
+    "grid_delete": {
+      "en": "Delete",
+      "fr": "Supprimer"
+    },
+    "grid_operator": {
+      "en": "Operator",
+      "fr": "Opérateur"
+    },
+    "grid_column": {
+      "en": "Column",
+      "fr": "Colonne"
+    },
+    "grid_value": {
+      "en": "Value",
+      "fr": "Valeur"
+    },
+    "grid_value_placeholder": {
+      "en": "Filter value",
+      "fr": "Valeur du filtre"
+    },
+    "grid_contains": {
+      "en": "contains",
+      "fr": "contient"
+    },
+    "grid_does_not_contain": {
+      "en": "does not contain",
+      "fr": "ne contient pas"
+    },
+    "grid_equals": {
+      "en": "equals",
+      "fr": "est égal à"
+    },
+    "grid_does_not_equal": {
+      "en": "does not equal",
+      "fr": "n'est pas égal à"
+    },
+    "grid_starts_with": {
+      "en": "starts with",
+      "fr": "commence par"
+    },
+    "grid_ends_with": {
+      "en": "ends with",
+      "fr": "se termine par"
+    },
+    "grid_is_empty": {
+      "en": "is empty",
+      "fr": "est vide"
+    },
+    "grid_is_not_empty": {
+      "en": "is not empty",
+      "fr": "n'est pas vide"
+    },
+    "grid_is_any_of": {
+      "en": "is any of",
+      "fr": "fait partie de"
+    },
+    "grid_menu": {
+      "en": "Menu",
+      "fr": "Menu"
+    },
+    "grid_column_menu": {
+      "en": "%1% column menu",
+      "fr": "Menu de la colonne %1%"
+    },
+    "grid_show_columns": {
+      "en": "Show columns",
+      "fr": "Afficher les colonnes"
+    },
+    "grid_manage_columns": {
+      "en": "Manage columns",
+      "fr": "Gérer les colonnes"
+    },
+    "grid_filter": {
+      "en": "Filter",
+      "fr": "Filtrer"
+    },
+    "grid_hide_column": {
+      "en": "Hide column",
+      "fr": "Masquer la colonne"
+    },
+    "grid_unsort": {
+      "en": "Unsort",
+      "fr": "Annuler le tri"
+    },
+    "grid_sort_asc": {
+      "en": "Sort ascending",
+      "fr": "Tri croissant"
+    },
+    "grid_sort_desc": {
+      "en": "Sort descending",
+      "fr": "Tri décroissant"
+    },
+    "grid_show_filters": {
+      "en": "Show filters",
+      "fr": "Afficher les filtres"
+    },
+    "grid_sort": {
+      "en": "Sort",
+      "fr": "Trier"
+    },
+    "grid_rows_per_page": {
+      "en": "Rows per page:",
+      "fr": "Lignes par page :"
+    },
+    "grid_displayed_rows": {
+      "en": "%1%–%2% of %3%",
+      "fr": "%1%–%2% sur %3%"
+    },
+    "grid_first_page": {
+      "en": "Go to first page",
+      "fr": "Aller à la première page"
+    },
+    "grid_last_page": {
+      "en": "Go to last page",
+      "fr": "Aller à la dernière page"
+    },
+    "grid_next_page": {
+      "en": "Go to next page",
+      "fr": "Aller à la page suivante"
+    },
+    "grid_previous_page": {
+      "en": "Go to previous page",
+      "fr": "Aller à la page précédente"
+    },
+    "show_in_context": {
+      "en": "Show in context",
+      "fr": "Voir dans le contexte"
     }
   }
 }

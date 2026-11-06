@@ -1,34 +1,31 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Box,
   Button,
   CircularProgress,
-  IconButton,
-  ListItemIcon,
-  ListItemText,
-  MenuItem,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
   Tab,
   Tabs,
   Typography,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import Check from "@mui/icons-material/Check";
-import ViewColumnIcon from "@mui/icons-material/ViewColumn";
+import { DataGrid, useGridApiRef } from "@mui/x-data-grid";
 import { doI18n } from "pankosmia-lib/i18n";
 import { getText } from "pankosmia-lib/http";
-import { i18nContext, PanMenuWrapper, ScrollableBody } from "pankosmia-rcl";
+import { i18nContext, ScrollableBody } from "pankosmia-rcl";
 import { parseLogs, REQUEST_FIELDS, STARTUP_FIELDS } from "./parseLogs";
+import {
+  EMPTY_FILTER_MODEL,
+  gridLocaleText,
+  hidesLogOrder,
+  logGridColumns,
+  toggleSelection,
+} from "./logGrid";
 
 const LOGS_URL = "/api/system/log";
 const I18N_COLUMNS = ["time", "level", "message", "details"];
+const SELECTED_ROW_CLASS = "log-row--selected";
 const STARTUP_VISIBLE = ["time", "url", "details"];
 const REQUESTS_VISIBLE = [
   "time",
@@ -54,115 +51,120 @@ function TabPanel({ value, index, children }) {
 }
 
 function LogTable({ title, rows, fields, visibleColumns, i18nRef }) {
-  const allColumns = ["time", "level", "message", ...fields, "details"];
-  const [hiddenFields, setHiddenFields] = useState(() =>
-    allColumns.filter((col) => !visibleColumns.includes(col)),
+  const translations = i18nRef.current;
+  const columns = useMemo(
+    () => logGridColumns(fields, (col) => columnLabel(col, i18nRef)),
+    [fields, i18nRef, translations],
   );
-  const [isOpen, setIsOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [sort, setSort] = useState({ column: null, direction: "asc" });
-  // time is always shown, so it is not offered in the menu
-  const columns = allColumns.filter((col) => !hiddenFields.includes(col));
-  const toggleableColumns = allColumns.filter((col) => col !== "time");
+  const gridRows = useMemo(
+    () => rows.map((row, id) => ({ ...row, id })),
+    [rows],
+  );
+  const localeText = useMemo(
+    () =>
+      gridLocaleText((key, values = []) =>
+        doI18n(`pages:dev_tools:${key}`, translations).replace(
+          /%(\d+)%/g,
+          (placeholder, position) => values[position - 1] ?? placeholder,
+        ),
+      ),
+    [translations],
+  );
+  const apiRef = useGridApiRef();
+  const [selectedId, setSelectedId] = useState(null);
+  const [filterModel, setFilterModel] = useState(EMPTY_FILTER_MODEL);
+  const [sortModel, setSortModel] = useState([]);
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 100,
+  });
+  const [scrollTarget, setScrollTarget] = useState(null);
+  const selected = selectedId !== null && selectedId < rows.length;
 
-  const cellValue = (row, col) =>
-    (fields.includes(col) ? row.fields[col] : row[col]) ?? "";
+  // Runs after the grid has rendered the page containing the row.
+  useEffect(() => {
+    if (scrollTarget === null) {
+      return undefined;
+    }
+    const frame = requestAnimationFrame(() => {
+      apiRef.current?.scrollToIndexes({ rowIndex: scrollTarget });
+      setScrollTarget(null);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [apiRef, scrollTarget]);
 
-  const sortedRows = sort.column
-    ? [...rows].sort((a, b) => {
-        const result = String(cellValue(a, sort.column)).localeCompare(
-          String(cellValue(b, sort.column)),
-          undefined,
-          { numeric: true },
-        );
-        return sort.direction === "asc" ? result : -result;
-      })
-    : rows;
-
-  const handleSort = (col) => {
-    setSort((prev) =>
-      prev.column === col && prev.direction === "asc"
-        ? { column: col, direction: "desc" }
-        : { column: col, direction: "asc" },
-    );
-  };
-
-  const handleToggle = (col) => {
-    setHiddenFields((prev) =>
-      prev.includes(col) ? prev.filter((item) => item !== col) : [...prev, col],
-    );
+  const showInContext = () => {
+    setFilterModel(EMPTY_FILTER_MODEL);
+    setSortModel([]);
+    setPaginationModel((prev) => ({
+      ...prev,
+      page: Math.floor(selectedId / prev.pageSize),
+    }));
+    setScrollTarget(selectedId);
   };
 
   return (
     <Box sx={{ mb: 3 }}>
-      <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
         <Typography variant="h6">
           {title} ({rows.length})
         </Typography>
-        <IconButton
-          onClick={(event) => {
-            setAnchorEl(event.currentTarget);
-            setIsOpen(true);
-          }}
-        >
-          <ViewColumnIcon />
-        </IconButton>
-        <PanMenuWrapper
-          anchorEl={anchorEl}
-          setIsOpen={setIsOpen}
-          isOpen={isOpen}
-        >
-          {toggleableColumns.map((col) => (
-            <MenuItem
-              key={col}
-              onClick={() => handleToggle(col)}
-              selected={!hiddenFields.includes(col)}
-            >
-              <ListItemIcon>
-                {!hiddenFields.includes(col) ? <Check fontSize="small" /> : null}
-              </ListItemIcon>
-              <ListItemText>{columnLabel(col, i18nRef)}</ListItemText>
-            </MenuItem>
-          ))}
-        </PanMenuWrapper>
+        {selected && hidesLogOrder(filterModel, sortModel) && (
+          <Button variant="outlined" size="small" onClick={showInContext}>
+            {doI18n("pages:dev_tools:show_in_context", translations)}
+          </Button>
+        )}
       </Box>
-      <TableContainer sx={{ maxHeight: "calc(100vh - 220px)" }}>
-        <Table stickyHeader size="small">
-          <TableHead>
-            <TableRow>
-              {columns.map((col) => (
-                <TableCell key={col} sx={{ fontWeight: "bold" }}>
-                  <TableSortLabel
-                    active={sort.column === col}
-                    direction={sort.column === col ? sort.direction : "asc"}
-                    onClick={() => handleSort(col)}
-                  >
-                    {columnLabel(col, i18nRef)}
-                  </TableSortLabel>
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortedRows.map((row, i) => (
-              <TableRow key={i}>
-                {columns.map((col) => (
-                  <TableCell
-                    key={col}
-                    sx={{
-                      fontFamily: "monospace",
-                      wordBreak: "break-word",
-                      verticalAlign: "top",
-                    }}
-                  >
-                    {cellValue(row, col)}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <Box sx={{ height: "max(320px, calc(100vh - 250px))", width: "100%" }}>
+        <DataGrid
+          aria-label={title}
+          apiRef={apiRef}
+          rows={gridRows}
+          columns={columns}
+          density="compact"
+          showToolbar
+          rowSelection={false}
+          onRowClick={({ id }) => setSelectedId((prev) => toggleSelection(prev, id))}
+          getRowClassName={({ id }) =>
+            selected && id === selectedId ? SELECTED_ROW_CLASS : ""
+          }
+          filterModel={filterModel}
+          onFilterModelChange={setFilterModel}
+          sortModel={sortModel}
+          onSortModelChange={setSortModel}
+          paginationModel={paginationModel}
+          onPaginationModelChange={setPaginationModel}
+          getRowHeight={() => "auto"}
+          pageSizeOptions={[25, 50, 100]}
+          localeText={localeText}
+          initialState={{
+            columns: {
+              columnVisibilityModel: Object.fromEntries(
+                columns.map(({ field }) => [field, visibleColumns.includes(field)]),
+              ),
+            },
+          }}
+          slotProps={{
+            toolbar: {
+              csvOptions: { disableToolbarButton: true },
+              printOptions: { disableToolbarButton: true },
+            },
+          }}
+          sx={{
+            "& .MuiDataGrid-cell": {
+              fontFamily: "monospace",
+              whiteSpace: "normal",
+              wordBreak: "break-word",
+              py: 1,
+            },
+            "& .MuiDataGrid-row": { cursor: "pointer" },
+            [`& .${SELECTED_ROW_CLASS}, & .${SELECTED_ROW_CLASS}:hover`]: {
+              backgroundColor: (theme) =>
+                alpha(theme.palette.secondary.main, 0.3),
+            },
+          }}
+        />
+      </Box>
     </Box>
   );
 }

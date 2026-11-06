@@ -1,34 +1,24 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Box,
   Button,
   CircularProgress,
-  IconButton,
-  ListItemIcon,
-  ListItemText,
-  MenuItem,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
   Tab,
   Tabs,
   Typography,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import Check from "@mui/icons-material/Check";
-import ViewColumnIcon from "@mui/icons-material/ViewColumn";
+import { DataGrid } from "@mui/x-data-grid";
 import { doI18n } from "pankosmia-lib/i18n";
 import { getText } from "pankosmia-lib/http";
-import { i18nContext, PanMenuWrapper, ScrollableBody } from "pankosmia-rcl";
+import { i18nContext, ScrollableBody } from "pankosmia-rcl";
 import { parseLogs, REQUEST_FIELDS, STARTUP_FIELDS } from "./parseLogs";
+import { gridLocaleText, logGridColumns, toggleSelection } from "./logGrid";
 
 const LOGS_URL = "/api/system/log";
-const I18N_COLUMNS = ["time", "level", "message", "details"];
+const SELECTED_ROW_CLASS = "log-row--selected";
 const STARTUP_VISIBLE = ["time", "url", "details"];
 const REQUESTS_VISIBLE = [
   "time",
@@ -39,12 +29,6 @@ const REQUESTS_VISIBLE = [
   "details",
 ];
 
-function columnLabel(col, i18nRef) {
-  return I18N_COLUMNS.includes(col)
-    ? doI18n(`pages:dev_tools:${col}`, i18nRef.current)
-    : col;
-}
-
 function TabPanel({ value, index, children }) {
   return (
     <div role="tabpanel" hidden={value !== index}>
@@ -54,115 +38,77 @@ function TabPanel({ value, index, children }) {
 }
 
 function LogTable({ title, rows, fields, visibleColumns, i18nRef }) {
-  const allColumns = ["time", "level", "message", ...fields, "details"];
-  const [hiddenFields, setHiddenFields] = useState(() =>
-    allColumns.filter((col) => !visibleColumns.includes(col)),
+  const translations = i18nRef.current;
+  const columns = useMemo(() => logGridColumns(fields), [fields]);
+  const gridRows = useMemo(
+    () => rows.map((row, id) => ({ ...row, id })),
+    [rows],
   );
-  const [isOpen, setIsOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [sort, setSort] = useState({ column: null, direction: "asc" });
-  // time is always shown, so it is not offered in the menu
-  const columns = allColumns.filter((col) => !hiddenFields.includes(col));
-  const toggleableColumns = allColumns.filter((col) => col !== "time");
-
-  const cellValue = (row, col) =>
-    (fields.includes(col) ? row.fields[col] : row[col]) ?? "";
-
-  const sortedRows = sort.column
-    ? [...rows].sort((a, b) => {
-        const result = String(cellValue(a, sort.column)).localeCompare(
-          String(cellValue(b, sort.column)),
-          undefined,
-          { numeric: true },
-        );
-        return sort.direction === "asc" ? result : -result;
-      })
-    : rows;
-
-  const handleSort = (col) => {
-    setSort((prev) =>
-      prev.column === col && prev.direction === "asc"
-        ? { column: col, direction: "desc" }
-        : { column: col, direction: "asc" },
-    );
-  };
-
-  const handleToggle = (col) => {
-    setHiddenFields((prev) =>
-      prev.includes(col) ? prev.filter((item) => item !== col) : [...prev, col],
-    );
-  };
+  const localeText = useMemo(
+    () =>
+      gridLocaleText((key, values = []) =>
+        doI18n(`pages:dev_tools:${key}`, translations).replace(
+          /%(\d+)%/g,
+          (placeholder, position) => values[position - 1] ?? placeholder,
+        ),
+      ),
+    [translations],
+  );
+  const [selectedId, setSelectedId] = useState(null);
+  const selected = selectedId !== null && selectedId < rows.length;
 
   return (
     <Box sx={{ mb: 3 }}>
-      <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-        <Typography variant="h6">
-          {title} ({rows.length})
-        </Typography>
-        <IconButton
-          onClick={(event) => {
-            setAnchorEl(event.currentTarget);
-            setIsOpen(true);
+      <Typography variant="h6" sx={{ mb: 1 }}>
+        {title} ({rows.length})
+      </Typography>
+      <Box sx={{ height: "max(320px, calc(100vh - 250px))", width: "100%" }}>
+        <DataGrid
+          aria-label={title}
+          rows={gridRows}
+          columns={columns}
+          density="compact"
+          showToolbar
+          rowSelection={false}
+          onRowClick={({ id }) => setSelectedId((prev) => toggleSelection(prev, id))}
+          getRowClassName={({ id }) =>
+            selected && id === selectedId ? SELECTED_ROW_CLASS : ""
+          }
+          getRowHeight={() => "auto"}
+          pageSizeOptions={[25, 50, 100]}
+          localeText={localeText}
+          initialState={{
+            columns: {
+              columnVisibilityModel: Object.fromEntries(
+                columns.map(({ field }) => [field, visibleColumns.includes(field)]),
+              ),
+            },
+            filter: {
+              filterModel: { items: [], quickFilterExcludeHiddenColumns: false },
+            },
+            pagination: { paginationModel: { pageSize: 100, page: 0 } },
           }}
-        >
-          <ViewColumnIcon />
-        </IconButton>
-        <PanMenuWrapper
-          anchorEl={anchorEl}
-          setIsOpen={setIsOpen}
-          isOpen={isOpen}
-        >
-          {toggleableColumns.map((col) => (
-            <MenuItem
-              key={col}
-              onClick={() => handleToggle(col)}
-              selected={!hiddenFields.includes(col)}
-            >
-              <ListItemIcon>
-                {!hiddenFields.includes(col) ? <Check fontSize="small" /> : null}
-              </ListItemIcon>
-              <ListItemText>{columnLabel(col, i18nRef)}</ListItemText>
-            </MenuItem>
-          ))}
-        </PanMenuWrapper>
+          slotProps={{
+            toolbar: {
+              csvOptions: { disableToolbarButton: true },
+              printOptions: { disableToolbarButton: true },
+            },
+          }}
+          sx={{
+            "& .MuiDataGrid-cell": {
+              fontFamily: "monospace",
+              whiteSpace: "normal",
+              wordBreak: "break-word",
+              py: 1,
+            },
+            "& .MuiDataGrid-row": { cursor: "pointer" },
+            [`& .${SELECTED_ROW_CLASS}, & .${SELECTED_ROW_CLASS}:hover`]: {
+              backgroundColor: (theme) =>
+                alpha(theme.palette.secondary.main, 0.3),
+            },
+          }}
+        />
       </Box>
-      <TableContainer sx={{ maxHeight: "calc(100vh - 220px)" }}>
-        <Table stickyHeader size="small">
-          <TableHead>
-            <TableRow>
-              {columns.map((col) => (
-                <TableCell key={col} sx={{ fontWeight: "bold" }}>
-                  <TableSortLabel
-                    active={sort.column === col}
-                    direction={sort.column === col ? sort.direction : "asc"}
-                    onClick={() => handleSort(col)}
-                  >
-                    {columnLabel(col, i18nRef)}
-                  </TableSortLabel>
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortedRows.map((row, i) => (
-              <TableRow key={i}>
-                {columns.map((col) => (
-                  <TableCell
-                    key={col}
-                    sx={{
-                      fontFamily: "monospace",
-                      wordBreak: "break-word",
-                      verticalAlign: "top",
-                    }}
-                  >
-                    {cellValue(row, col)}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
     </Box>
   );
 }

@@ -10,21 +10,14 @@ import {
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import { DataGrid, useGridApiRef } from "@mui/x-data-grid";
+import { DataGrid } from "@mui/x-data-grid";
 import { doI18n } from "pankosmia-lib/i18n";
 import { getText } from "pankosmia-lib/http";
 import { i18nContext, ScrollableBody } from "pankosmia-rcl";
 import { parseLogs, REQUEST_FIELDS, STARTUP_FIELDS } from "./parseLogs";
-import {
-  EMPTY_FILTER_MODEL,
-  gridLocaleText,
-  hidesLogOrder,
-  logGridColumns,
-  toggleSelection,
-} from "./logGrid";
+import { gridLocaleText, logGridColumns, toggleSelection } from "./logGrid";
 
 const LOGS_URL = "/api/system/log";
-const I18N_COLUMNS = ["time", "level", "message", "details"];
 const SELECTED_ROW_CLASS = "log-row--selected";
 const STARTUP_VISIBLE = ["time", "url", "details"];
 const REQUESTS_VISIBLE = [
@@ -36,12 +29,6 @@ const REQUESTS_VISIBLE = [
   "details",
 ];
 
-function columnLabel(col, i18nRef) {
-  return I18N_COLUMNS.includes(col)
-    ? doI18n(`pages:dev_tools:${col}`, i18nRef.current)
-    : col;
-}
-
 function TabPanel({ value, index, children }) {
   return (
     <div role="tabpanel" hidden={value !== index}>
@@ -52,10 +39,7 @@ function TabPanel({ value, index, children }) {
 
 function LogTable({ title, rows, fields, visibleColumns, i18nRef }) {
   const translations = i18nRef.current;
-  const columns = useMemo(
-    () => logGridColumns(fields, (col) => columnLabel(col, i18nRef)),
-    [fields, i18nRef, translations],
-  );
+  const columns = useMemo(() => logGridColumns(fields), [fields]);
   const gridRows = useMemo(
     () => rows.map((row, id) => ({ ...row, id })),
     [rows],
@@ -70,55 +54,17 @@ function LogTable({ title, rows, fields, visibleColumns, i18nRef }) {
       ),
     [translations],
   );
-  const apiRef = useGridApiRef();
   const [selectedId, setSelectedId] = useState(null);
-  const [filterModel, setFilterModel] = useState(EMPTY_FILTER_MODEL);
-  const [sortModel, setSortModel] = useState([]);
-  const [paginationModel, setPaginationModel] = useState({
-    page: 0,
-    pageSize: 100,
-  });
-  const [scrollTarget, setScrollTarget] = useState(null);
   const selected = selectedId !== null && selectedId < rows.length;
-
-  // Runs after the grid has rendered the page containing the row.
-  useEffect(() => {
-    if (scrollTarget === null) {
-      return undefined;
-    }
-    const frame = requestAnimationFrame(() => {
-      apiRef.current?.scrollToIndexes({ rowIndex: scrollTarget });
-      setScrollTarget(null);
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [apiRef, scrollTarget]);
-
-  const showInContext = () => {
-    setFilterModel(EMPTY_FILTER_MODEL);
-    setSortModel([]);
-    setPaginationModel((prev) => ({
-      ...prev,
-      page: Math.floor(selectedId / prev.pageSize),
-    }));
-    setScrollTarget(selectedId);
-  };
 
   return (
     <Box sx={{ mb: 3 }}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
-        <Typography variant="h6">
-          {title} ({rows.length})
-        </Typography>
-        {selected && hidesLogOrder(filterModel, sortModel) && (
-          <Button variant="outlined" size="small" onClick={showInContext}>
-            {doI18n("pages:dev_tools:show_in_context", translations)}
-          </Button>
-        )}
-      </Box>
+      <Typography variant="h6" sx={{ mb: 1 }}>
+        {title} ({rows.length})
+      </Typography>
       <Box sx={{ height: "max(320px, calc(100vh - 250px))", width: "100%" }}>
         <DataGrid
           aria-label={title}
-          apiRef={apiRef}
           rows={gridRows}
           columns={columns}
           density="compact"
@@ -128,12 +74,6 @@ function LogTable({ title, rows, fields, visibleColumns, i18nRef }) {
           getRowClassName={({ id }) =>
             selected && id === selectedId ? SELECTED_ROW_CLASS : ""
           }
-          filterModel={filterModel}
-          onFilterModelChange={setFilterModel}
-          sortModel={sortModel}
-          onSortModelChange={setSortModel}
-          paginationModel={paginationModel}
-          onPaginationModelChange={setPaginationModel}
           getRowHeight={() => "auto"}
           pageSizeOptions={[25, 50, 100]}
           localeText={localeText}
@@ -143,6 +83,10 @@ function LogTable({ title, rows, fields, visibleColumns, i18nRef }) {
                 columns.map(({ field }) => [field, visibleColumns.includes(field)]),
               ),
             },
+            filter: {
+              filterModel: { items: [], quickFilterExcludeHiddenColumns: false },
+            },
+            pagination: { paginationModel: { pageSize: 100, page: 0 } },
           }}
           slotProps={{
             toolbar: {

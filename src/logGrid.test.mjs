@@ -2,13 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { getGridStringOperators } from "@mui/x-data-grid";
 import { readFileSync } from "node:fs";
-import {
-  EMPTY_FILTER_MODEL,
-  gridLocaleText,
-  hidesLogOrder,
-  logGridColumns,
-  toggleSelection,
-} from "./logGrid.js";
+import { gridLocaleText, logGridColumns, toggleSelection } from "./logGrid.js";
 import { parseLogs, REQUEST_FIELDS, STARTUP_FIELDS } from "./parseLogs.js";
 
 const { startup, requests } = parseLogs([
@@ -16,16 +10,16 @@ const { startup, requests } = parseLogs([
   "Nov 06 10:00:01.000 INFO Request, method: GET, uri: /api",
   "Nov 06 10:00:02.000 ERROR Response, code: 500, reason: Internal Server Error, trace: abc",
 ].join("\n"));
-const columns = logGridColumns(REQUEST_FIELDS, (field) => `Label: ${field}`);
+const columns = logGridColumns(REQUEST_FIELDS);
 
-test("all log fields are available and time cannot be hidden", () => {
+test("all log fields are available with raw names and time cannot be hidden", () => {
   assert.deepEqual(
     columns.map(({ field }) => field),
     ["time", "level", "message", ...REQUEST_FIELDS, "details"],
   );
   assert.equal(columns[0].hideable, false);
   assert.ok(columns.slice(1).every(({ hideable }) => hideable));
-  assert.equal(columns[0].headerName, "Label: time");
+  assert.ok(columns.every(({ field, headerName }) => headerName === field));
 });
 
 test("columns share the available width", () => {
@@ -71,7 +65,7 @@ test("sorting preserves natural numeric comparison", () => {
 });
 
 test("startup columns expose their own nested fields", () => {
-  const column = logGridColumns(STARTUP_FIELDS, (field) => field)
+  const column = logGridColumns(STARTUP_FIELDS)
     .find(({ field }) => field === "url");
   assert.equal(column.valueGetter(undefined, startup[0]), "/api");
 });
@@ -122,47 +116,4 @@ test("clicking a row selects it and clicking it again deselects it", () => {
   assert.equal(toggleSelection(3, 3), null);
   assert.equal(toggleSelection(3, 0), 0);
   assert.equal(toggleSelection(0, 0), null);
-});
-
-test("context button is needed only when filters or sorting change log order", () => {
-  const filter = (items, quickFilterValues = []) => ({
-    ...EMPTY_FILTER_MODEL,
-    items,
-    quickFilterValues,
-  });
-  assert.equal(hidesLogOrder(EMPTY_FILTER_MODEL, []), false);
-  assert.equal(hidesLogOrder({ items: [] }, []), false);
-  assert.equal(
-    hidesLogOrder(filter([{ field: "level", operator: "contains" }]), []),
-    false,
-  );
-  assert.equal(
-    hidesLogOrder(filter([{ field: "level", operator: "contains", value: "" }]), []),
-    false,
-  );
-  assert.equal(
-    hidesLogOrder(filter([{ field: "level", operator: "isAnyOf", value: [] }]), []),
-    false,
-  );
-  assert.equal(hidesLogOrder(filter([], [""]), []), false);
-  assert.equal(
-    hidesLogOrder(filter([{ field: "level", operator: "equals", value: "ERROR" }]), []),
-    true,
-  );
-  assert.equal(
-    hidesLogOrder(filter([{ field: "details", operator: "isNotEmpty" }]), []),
-    true,
-  );
-  assert.equal(hidesLogOrder(filter([], ["500"]), []), true);
-  assert.equal(
-    hidesLogOrder(EMPTY_FILTER_MODEL, [{ field: "code", sort: "desc" }]),
-    true,
-  );
-});
-
-test("context button label is translated", () => {
-  assert.deepEqual(metadata.i18n.show_in_context, {
-    en: "Show in context",
-    fr: "Voir dans le contexte",
-  });
 });

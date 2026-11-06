@@ -17,22 +17,6 @@
       "en": "Refresh",
       "fr": "Rafraîchir"
     },
-    "time": {
-      "en": "Time",
-      "fr": "Heure"
-    },
-    "level": {
-      "en": "Level",
-      "fr": "Niveau"
-    },
-    "message": {
-      "en": "Message",
-      "fr": "Message"
-    },
-    "details": {
-      "en": "Details",
-      "fr": "Détails"
-    },
     "startup_title": {
       "en": "Server startup",
       "fr": "Démarrage du serveur"
@@ -228,10 +212,6 @@
     "grid_previous_page": {
       "en": "Go to previous page",
       "fr": "Aller à la page précédente"
-    },
-    "show_in_context": {
-      "en": "Show in context",
-      "fr": "Voir dans le contexte"
     }
   }
 }

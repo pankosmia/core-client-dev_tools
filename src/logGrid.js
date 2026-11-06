@@ -69,35 +69,14 @@ export function gridLocaleText(text) {
   };
 }
 
-export const EMPTY_FILTER_MODEL = {
-  items: [],
-  quickFilterValues: [],
-  quickFilterExcludeHiddenColumns: false,
-};
-
 export function toggleSelection(selectedId, id) {
   return selectedId === id ? null : id;
 }
 
-const VALUELESS_OPERATORS = ["isEmpty", "isNotEmpty"];
-
-// True when filters or sorting hide or reorder rows compared to the log order.
-export function hidesLogOrder(filterModel, sortModel) {
-  const hasFilter = filterModel.items.some(
-    ({ operator, value }) =>
-      VALUELESS_OPERATORS.includes(operator) ||
-      (value !== undefined && value !== "" && !(Array.isArray(value) && value.length === 0)),
-  );
-  const hasQuickFilter = (filterModel.quickFilterValues ?? []).some(
-    (value) => value !== "",
-  );
-  return hasFilter || hasQuickFilter || sortModel.length > 0;
-}
-
-export function logGridColumns(fields, label) {
+export function logGridColumns(fields) {
   return ["time", "level", "message", ...fields, "details"].map((field) => ({
     field,
-    headerName: label(field),
+    headerName: field,
     type: "string",
     flex: 1,
     minWidth: field === "time" ? 170 : 100,
